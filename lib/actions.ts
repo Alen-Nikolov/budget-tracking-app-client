@@ -18,7 +18,7 @@ async function authenticate(path: "/login" | "/register", payload: object, email
     res = await fetch(`${API_URL}${path}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, ...(path === "/register" ? { client: "WEB" } : {}) }),
       cache: "no-store",
     });
   } catch {
@@ -27,6 +27,7 @@ async function authenticate(path: "/login" | "/register", payload: object, email
 
   if (!res.ok) {
     const err = await toApiException(res);
+    if (err.code === "EMAIL_NOT_VERIFIED") redirect(`/check-your-email?email=${encodeURIComponent(email)}&unverified=1`);
     let message = err.message;
     if (res.status === 429) {
       const wait = res.headers.get("Retry-After");
@@ -34,6 +35,9 @@ async function authenticate(path: "/login" | "/register", payload: object, email
     }
     return { message, fieldErrors: err.fieldErrors ?? undefined, email };
   }
+
+  // Registration issues no tokens: the user must verify their email first.
+  if (path === "/register") redirect(`/check-your-email?email=${encodeURIComponent(email)}`);
 
   const auth = (await res.json()) as AuthResponse;
   const jar = await cookies();
@@ -72,4 +76,32 @@ export async function logoutAction() {
   }
   SESSION_COOKIE_NAMES.forEach((n) => jar.delete(n));
   redirect("/login");
+}
+
+export interface ResendState {
+  message?: string;
+  error?: string;
+  sentAt?: number;
+}
+
+export async function resendAction(_: ResendState, form: FormData): Promise<ResendState> {
+  const email = String(form.get("email") ?? "").trim();
+  if (!email) return { error: "Enter your email address." };
+  try {
+    const res = await fetch(`${API_URL}/resend-verification`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, client: "WEB" }),
+      cache: "no-store",
+    });
+    if (res.status === 400) {
+      const err = await toApiException(res);
+      return { error: err.fieldErrors?.email ?? err.message };
+    }
+    if (!res.ok) return { error: "Could not send the email. Please try again." };
+  } catch {
+    return { error: "Cannot reach the API. Is the backend running?" };
+  }
+  // The API always answers 202 and never reveals whether the account exists.
+  return { message: "If that account is awaiting verification, a new link is on its way.", sentAt: Date.now() };
 }

@@ -67,7 +67,7 @@ export default async function Dashboard({ searchParams }: { searchParams: Promis
         {stats ? (
           <>
             <div className="card stat"><span>Total users</span><strong>{stats.totalUsers}</strong></div>
-            <div className="card stat"><span>Total expenses</span><strong>{stats.totalExpenses}</strong></div>
+            <div className="card stat"><span>Total expense of all users</span><strong>{stats.totalExpenses}</strong></div>
           </>
         ) : (
           <p className="notice">{statsError}</p>

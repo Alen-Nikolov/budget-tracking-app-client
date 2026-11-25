@@ -11,6 +11,7 @@ export class ApiException extends Error {
     public status: number,
     message: string,
     public fieldErrors?: Record<string, string> | null,
+    public code?: string | null,
   ) {
     super(message);
   }
@@ -24,7 +25,7 @@ export async function toApiException(res: Response): Promise<ApiException> {
   } catch {
     /* empty body */
   }
-  return new ApiException(res.status, body.message ?? res.statusText, body.fieldErrors);
+  return new ApiException(res.status, body.message ?? res.statusText, body.fieldErrors, body.code);
 }
 
 async function authed<T>(path: string): Promise<T> {

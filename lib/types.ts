@@ -50,4 +50,5 @@ export interface Stats {
 export interface ApiError {
   message?: string;
   fieldErrors?: Record<string, string> | null;
+  code?: string | null;
 }

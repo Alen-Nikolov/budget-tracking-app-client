@@ -33,6 +33,7 @@ export default function Filters({ from, to, selected, categories }: Props) {
 
   return (
     <div className="card filters" aria-busy={pending}>
+      <div className="dates">
       <label>
         From
         <input
@@ -57,6 +58,7 @@ export default function Filters({ from, to, selected, categories }: Props) {
           }}
         />
       </label>
+      </div>
       <fieldset>
         <legend>Categories {ids.length === 0 && "(none selected = all)"}</legend>
         {categories.length === 0 && <span className="hint">No categories yet.</span>}
